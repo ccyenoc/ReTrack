@@ -1,4 +1,6 @@
-# 🚀 ReTrack — Smart Assistant App
+# 🚀 ReTrack
+<img width="1254" height="1254" alt="retracklogo" src="https://github.com/user-attachments/assets/c51a8309-46bd-487f-ade6-b09e453f0148" />
+
 
 ## 📱 Overview
 
