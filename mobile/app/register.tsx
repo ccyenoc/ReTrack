@@ -1,6 +1,9 @@
 import { View, Text, TextInput, TouchableOpacity, Alert, Image } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../firebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -8,22 +11,41 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleRegister = () => {
-    if (!username  || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Please fill all fields");
-      return;
-    }
+  const handleRegister = async () => {
+  if (!username || !email || !password || !confirmPassword) {
+    Alert.alert("Error", "Please fill all fields");
+    return;
+  }
 
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
-      return;
-    }
+  if (password !== confirmPassword) {
+    Alert.alert("Error", "Passwords do not match");
+    return;
+  }
 
-    // fake register success
+  try {
+    // 🔐 create user in Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    const user = userCredential.user;
+
+    // 💾 save extra data (username) in Firestore
+    await setDoc(doc(db, "users", user.uid), {
+      username: username,
+      email: email,
+      createdAt: new Date(),
+    });
+
     Alert.alert("Success", "Account created!");
 
-    router.replace("/"); // go back to login
-  };
+    router.replace("/");
+  } catch (error: any) {
+    Alert.alert("Error", error.message);
+  }
+};
 
   return (
     <View

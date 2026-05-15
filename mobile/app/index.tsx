@@ -1,18 +1,30 @@
 import { Image , View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebaseConfig";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    if (email && password) {
-      router.replace("/homepage"); // adjust if your home route is different
-    } else {
-      Alert.alert("Error", "Please enter email and password");
-    }
-  };
+  const handleLogin = async () => {
+  if (!email || !password) {
+    Alert.alert("Error", "Please enter email and password");
+    return;
+  }
+
+  try {
+    //Firebase login
+    await signInWithEmailAndPassword(auth, email, password);
+
+    //success
+    router.replace("/homepage");
+
+  } catch (error: any) {
+    Alert.alert("Login Failed", error.message);
+  }
+};
 
   return (
     <View
