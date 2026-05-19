@@ -4,7 +4,8 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  Modal
+  Modal,
+  Button
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,6 +14,18 @@ import MiniCard from "../components/mini-card";
 import { Action } from "../types/Action";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useState } from "react";
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
+
+WebBrowser.maybeCompleteAuthSession();
+
+const redirectUri = AuthSession.makeRedirectUri({
+  native: "com.yiuernnn.mobile:/oauth",
+});
+
+const discovery = {
+  authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+};
 
 // 🎨 COLORS
 const colors = {
@@ -37,8 +50,11 @@ const initialReminders: Action[] = [
 ];
 
 export default function Home() {
+  console.log("API URL:", process.env.EXPO_PUBLIC_API_URL);
+  
   const [detectedData, setDetectedData] = useState<Action[]>([]);
   const [reminders, setReminders] = useState<Action[]>(initialReminders);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const isToday = (dateString: string) => {
   const today = new Date().toDateString();
   return dateString === today;
@@ -71,9 +87,81 @@ export default function Home() {
   const work = detectedData.filter(i => i.type === "work");
   const alerts = detectedData.filter(i => i.type === "alert");
 
+  const [request, response, promptAsync] =
+  AuthSession.useAuthRequest(
+    {
+      clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID!,
+
+      scopes: [
+        "openid",
+        "profile",
+        "email",
+        "https://www.googleapis.com/auth/gmail.readonly",
+      ],
+
+      redirectUri,
+
+      responseType: AuthSession.ResponseType.Code,
+      usePKCE: true,
+    },
+    discovery
+  );
+
+  console.log("REDIRECT URI:", redirectUri);
+
   useEffect(() => {
-    setTimeout(() => setDetectedData(mockDetectedData), 800);
-  }, []);
+    if (response?.type === "success") {
+     const code = response.params.code;
+
+     console.log("AUTH CODE:", code);
+
+     fetchEmails(code);
+    }
+
+    if (response?.type === "error") {
+      console.error("❌ OAUTH ERROR:", response.error);
+      console.error("Error Code:", response.errorCode);
+      console.error("Error Description:", response.errorDescription);
+      console.error("Full Response:", response);
+    }
+  }, [response]);
+
+console.log("🔑 CLIENT ID:", process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID);
+console.log("🔗 REDIRECT URI:", redirectUri);
+console.log("📋 REQUEST:", request);
+console.log("📬 RESPONSE:", response);
+
+  {/*ngrok : */}
+  const fetchEmails = async(code: string) => {
+    try{
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/emails`,{
+        method : "POST",
+        headers : {
+          "Content-Type" : "application/json",
+        },
+        body: JSON.stringify({
+          accessToken: code
+        }),
+      });
+
+        const data = await res.json();
+
+        const mapped = data.map((item: any, index: number) => ({
+            id: index.toString(),
+            type: item.type,
+            title: item.title,
+            subtitle: item.subtitle,
+        }));
+
+        console.log("EMAILS : ",mapped);
+       setDetectedData(mapped);
+
+      }
+
+    catch(err){
+      console.log("ERROR : ",err);
+    }
+  }
 
   const addParcel = () => {
     if (!newTracking) return;
@@ -128,14 +216,49 @@ const newItem: Action = {
          flex: 1, 
          backgroundColor: colors.bg,
          paddingTop:70, }}>
-        <View style={{ padding: 20 }}>
+        <View 
+        style={{ 
+          padding: 20 }}>
 
           {/* HEADER */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 20 }}>
-            <Text style={{ fontSize: 24, fontWeight: "700" }}>Smart Assistant</Text>
-            <TouchableOpacity onPress={() => router.push("/settings" as any)}>
-              <Ionicons name="settings-outline" size={22} />
+          <View 
+           style={{ 
+             flexDirection: "row", 
+             justifyContent: "space-between", 
+             marginBottom: 20, 
+             alignItems:"center",
+            }}>
+              <Text 
+              style={{ 
+                fontSize: 22, 
+                fontWeight: "700" 
+              }}>Smart Assistant</Text>
+             
+             <TouchableOpacity
+              onPress={async () => {
+                const result = await promptAsync();
+
+                console.log("LOGIN RESULT:", result);
+                }}
+              style={{
+                backgroundColor: "#DB4437", // Google red
+                padding: 10,
+                borderRadius: 10,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ 
+                color: "#fff", 
+                fontWeight: "600",
+                fontSize:14, }}>
+                Connect Gmail
+              </Text>
             </TouchableOpacity>
+
+             <TouchableOpacity onPress={() => router.push("/settings" as any)}>
+               <Ionicons name="settings-outline" size={22} />
+             </TouchableOpacity>
+
           </View>
 
           {/* REMINDERS */}

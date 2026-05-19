@@ -5,6 +5,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 
+
 export default function Register() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");

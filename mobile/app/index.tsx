@@ -1,8 +1,9 @@
 import { Image , View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
-import { useState } from "react";
+import { useState , useEffect} from "react";
 import { router } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebaseConfig";
+
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -23,6 +24,9 @@ export default function Login() {
 
   } catch (error: any) {
     Alert.alert("Login Failed", error.message);
+  }
+  finally{
+    console.log("🔥 FIREBASE API KEY:", process.env.EXPO_PUBLIC_FIREBASE_API_KEY);
   }
 };
 
