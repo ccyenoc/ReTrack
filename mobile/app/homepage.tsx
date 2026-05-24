@@ -53,6 +53,7 @@ export default function Home() {
   console.log("API URL:", process.env.EXPO_PUBLIC_API_URL);
   
   const [detectedData, setDetectedData] = useState<Action[]>([]);
+  const [dismissedParcels,setDismissedParcels] =useState<string[]>([]);
   const [reminders, setReminders] = useState<Action[]>(initialReminders);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const isToday = (dateString: string) => {
@@ -79,9 +80,37 @@ export default function Home() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  const parcels = detectedData
-    .filter(i => i.type === "parcel")
-    .filter(i => i.subtitle.toLowerCase().includes(search.toLowerCase()));
+ const parcels =
+
+detectedData
+
+.filter(
+i =>
+i.type ===
+"parcel"
+)
+
+.filter(
+i =>
+
+!dismissedParcels
+.includes(
+i.id
+)
+
+)
+
+.filter(
+i =>
+
+i.subtitle
+.toLowerCase()
+
+.includes(
+search.toLowerCase()
+)
+
+);
 
   const bills = detectedData.filter(i => i.type === "bill");
   const work = detectedData.filter(i => i.type === "work");
@@ -163,6 +192,100 @@ console.log("📬 RESPONSE:", response);
     }
   }
 
+  useEffect(() => {
+
+    const updateParcelStatus =
+        async () => {
+
+            const updated =
+
+                await Promise.all(
+
+                    detectedData.map(
+
+                        async (
+
+                            item
+
+                        ) => {
+
+                            if (
+
+                                item.type !==
+                                "parcel"
+
+                            ) {
+
+                                return item;
+
+                            }
+
+                            try {
+
+                                const res =
+
+                                    await fetch(
+
+`${process.env.EXPO_PUBLIC_API_URL}/api/track/${item.subtitle}`
+
+                                    );
+
+                                const data =
+                                    await res.json();
+
+                                const parcel =
+
+                                    data
+                                    ?.result
+                                    ?.[0];
+
+                                return {
+
+                                    ...item,
+
+                                    status:
+
+                                        parcel
+                                        ?.latest_status
+
+                                        ||
+
+                                        item.status
+
+                                };
+
+                            }
+
+                            catch {
+
+                                return item;
+
+                            }
+
+                        }
+
+                    )
+
+                );
+
+            setDetectedData(
+                updated
+            );
+
+        };
+
+    if (
+
+        detectedData.length
+
+    ) {
+
+        updateParcelStatus();
+
+    }
+
+}, [detectedData.length]);
+
   const addParcel = () => {
     if (!newTracking) return;
 
@@ -171,7 +294,7 @@ console.log("📬 RESPONSE:", response);
       type: "parcel",
       title: newName || "Manual Parcel",
       subtitle: newTracking,
-      status: "In Transit",
+      status: "Loading...",
     };
 
     setDetectedData(prev => [newItem, ...prev]);
@@ -208,6 +331,26 @@ const newItem: Action = {
     borderRadius: 16,
     marginBottom: 12,
   };
+
+  const confirmDelivered = (
+
+id: string
+
+) => {
+
+setDismissedParcels(
+
+prev => [
+
+...prev,
+
+id
+
+]
+
+);
+
+};
 
   return (
     <>
@@ -306,32 +449,66 @@ const newItem: Action = {
               />
 
               <ScrollView>
-              {parcels.map((item) => (
-                <TouchableOpacity
+             {parcels.map((item) => (
+                <View
                   key={item.id}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/parcel",
+                  style={{
+                    marginBottom: 8,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push({
+                        pathname: "/parcel",
 
-                      params: {
-                        trackingNumber: item.subtitle,
+                        params: {
+                          trackingNumber: item.subtitle,
 
-                        status:
-                          item.status ??
-                          "In Transit",
+                          status:
+                            item.status ??
+                            "In Transit",
 
-                        title:
-                          item.title,
+                          title:
+                            item.title,
 
-                        history:
-                          JSON.stringify(
+                          history: JSON.stringify(
                             item.history ?? []
                           ),
-                      },
-                    }) }
-                >
-                  <MiniCard item={item} />
-                </TouchableOpacity>
+                        },
+                      })
+                    }
+                  >
+                    <MiniCard item={item} />
+                  </TouchableOpacity>
+
+                  {item.status === "Delivered" && (
+                    <TouchableOpacity
+                      onPress={() =>
+                        confirmDelivered(
+                          item.id
+                        )
+                      }
+                      style={{
+                        position: "absolute",
+                        right: 8,
+                        top: 12,
+                        width: 22,
+                        height: 22,
+                        borderRadius: 16,
+                        backgroundColor: "#22C55E",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 999,
+                      }}
+                    >
+                      <Ionicons
+                        name="checkmark"
+                        size={15}
+                        color="white"
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
               ))}
             </ScrollView>
             </View>

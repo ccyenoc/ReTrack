@@ -1,3 +1,8 @@
+import React, {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   View,
   Text,
@@ -16,86 +21,245 @@ import {
 
 export default function Parcel() {
 
+  // -----------------
+  // ROUTE PARAMS
+  // -----------------
+
   const {
     trackingNumber,
-    status,
-    history,
-  } =
-    useLocalSearchParams();
+  } = useLocalSearchParams();
 
-  const trackingHistory =
-    history
-      ? JSON.parse(
-          history as string
-        )
-      : [];
+
+
+  // -----------------
+  // STATE
+  // -----------------
+
+  const [
+    status,
+    setStatus,
+  ] = useState(
+    "Loading..."
+  );
+
+  const [
+    trackingHistory,
+    setTrackingHistory,
+  ] = useState<any[]>([]);
+
+
+
+  // -----------------
+  // FETCH TRACKING
+  // -----------------
+
+  useEffect(() => {
+
+    const fetchTracking =
+        async () => {
+
+            try {
+
+                const res =
+
+                    await fetch(
+
+                        `${process.env.EXPO_PUBLIC_API_URL}/api/track/${trackingNumber}`
+
+                    );
+
+                const data =
+                    await res.json();
+
+                console.log(
+                    JSON.stringify(
+                        data,
+                        null,
+                        2
+                    )
+                );
+
+                const parcel =
+
+                    data
+                    ?.result
+                    ?.[0];
+
+                if (
+
+                    !parcel
+
+                ) {
+
+                    setStatus(
+                        "Not Found"
+                    );
+
+                    return;
+
+                }
+
+                setStatus(
+
+                    parcel
+                    .latest_status
+
+                );
+
+                const history =
+
+                    Object
+                        .values(
+
+                            parcel
+                            .status_list
+
+                        )
+
+                        .filter(
+
+                            (
+                                item: any
+                            ) =>
+
+                                typeof item ===
+                                "object"
+
+                                &&
+
+                                item.event_date
+
+                        )
+
+                        .map(
+
+                            (
+                                item: any
+                            ) => ({
+
+                                status:
+                                    item.status,
+
+                                time:
+
+                                    item.event_date
+                                    +
+
+                                    " "
+
+                                    +
+
+                                    item.event_time,
+
+                                desc:
+                                    item.location
+
+                            })
+
+                        );
+
+                setTrackingHistory(
+                    history
+                );
+
+            }
+
+            catch (
+
+                err
+
+            ) {
+
+                console.log(
+                    "TRACK ERROR:",
+                    err
+                );
+
+            }
+
+        };
+
+    fetchTracking();
+
+}, []);
+
+
+
 
   return (
+
     <ScrollView
       style={{
         flex: 1,
-
         backgroundColor:
           "#F8FAFC",
       }}
     >
+
       <View
-  style={{
-    padding: 24,
-  }}
->
+        style={{
+          padding: 24,
+        }}
+      >
 
-  {/* HEADER */}
+        {/* HEADER */}
 
-  <View
-    style={{
-      flexDirection: "row",
+        <View
+          style={{
+            flexDirection:
+              "row",
 
-      alignItems: "center",
+            alignItems:
+              "center",
 
-      marginBottom: 25,
-    }}
-  >
+            marginBottom:
+              25,
+          }}
+        >
 
-    <TouchableOpacity
-      onPress={() =>
-        router.back()
-      }
+          <TouchableOpacity
+            onPress={() =>
+              router.back()
+            }
 
-      style={{
-        position:
-          "absolute",
+            style={{
+              position:
+                "absolute",
 
-        left: 0,
+              left: 0,
 
-        zIndex: 1,
-      }}
-    >
-      <Ionicons
-        name="arrow-back"
-        size={28}
-        color="#111827"
-      />
-    </TouchableOpacity>
+              zIndex: 1,
+            }}
+          >
 
-    <Text
-      style={{
-        flex: 1,
+            <Ionicons
+              name="arrow-back"
+              size={28}
+              color="#111827"
+            />
 
-        textAlign:
-          "center",
+          </TouchableOpacity>
 
-        fontSize:
-          30,
+          <Text
+            style={{
+              flex: 1,
 
-        fontWeight:
-          "700",
-      }}
-    >
-      Parcel Tracking
-    </Text>
+              textAlign:
+                "center",
 
-  </View>
+              fontSize:
+                30,
+
+              fontWeight:
+                "700",
+            }}
+          >
+            Parcel Tracking
+          </Text>
+
+        </View>
+
+
 
         {/* CARD */}
 
@@ -110,6 +274,7 @@ export default function Parcel() {
             padding: 22,
           }}
         >
+
           <Text
             style={{
               color:
@@ -134,6 +299,8 @@ export default function Parcel() {
             {trackingNumber}
           </Text>
 
+
+
           <Text
             style={{
               marginTop:
@@ -145,6 +312,7 @@ export default function Parcel() {
           >
             Current Status
           </Text>
+
 
           <View
             style={{
@@ -160,32 +328,37 @@ export default function Parcel() {
                   ? "#DCFCE7"
                   : "#DBEAFE",
 
+              borderRadius:
+                999,
+
               paddingHorizontal:
                 16,
 
               paddingVertical:
                 8,
-
-              borderRadius:
-                999,
             }}
           >
+
             <Text
               style={{
+                fontWeight:
+                  "700",
+
                 color:
                   status ===
                   "Delivered"
                     ? "#16A34A"
                     : "#2563EB",
-
-                fontWeight:
-                  "700",
               }}
             >
               {status}
             </Text>
+
           </View>
+
         </View>
+
+
 
         {/* HISTORY */}
 
@@ -204,77 +377,99 @@ export default function Parcel() {
           Tracking History
         </Text>
 
-        {trackingHistory.length ===
-        0 ? (
 
-          <View
-            style={{
-              backgroundColor:
-                "#fff",
+        {
+          trackingHistory
+            .length === 0
 
-              marginTop:
-                15,
+          ?
 
-              borderRadius:
-                20,
+          (
 
-              padding:
-                20,
-            }}
-          >
-            <Text>
-              No tracking updates
-            </Text>
-          </View>
+            <View
+              style={{
+                marginTop:
+                  15,
 
-        ) : (
+                backgroundColor:
+                  "#fff",
 
-          trackingHistory.map(
-            (
-              step: any, index
-            ) => (
-              <View
-                key={index}
+                padding:
+                  20,
 
-                style={{
-                  marginTop:
-                    15,
+                borderRadius:
+                  20,
+              }}
+            >
 
-                  backgroundColor:
-                    "#fff",
+              <Text>
+                No tracking updates
+              </Text>
 
-                  padding:
-                    20,
+            </View>
 
-                  borderRadius:
-                    20,
-                }}
-              >
-
-                <Text
-                  style={{
-                    fontWeight:
-                      "700",
-                  }}
-                >
-                  {step.status}
-                </Text>
-
-                <Text>
-                  {step.time}
-                </Text>
-
-                <Text>
-                  {step.desc}
-                </Text>
-
-              </View>
-            )
           )
 
-        )}
+          :
+
+          (
+
+            trackingHistory.map(
+              (
+                step,
+                index
+              ) => (
+
+                <View
+                  key={
+                    index
+                  }
+
+                  style={{
+                    marginTop:
+                      15,
+
+                    backgroundColor:
+                      "#fff",
+
+                    padding:
+                      20,
+
+                    borderRadius:
+                      20,
+                  }}
+                >
+
+                  <Text
+                    style={{
+                      fontWeight:
+                        "700",
+                    }}
+                  >
+                    {step.status}
+                  </Text>
+
+                  <Text>
+                    {step.time}
+                  </Text>
+
+                  <Text>
+                    {step.desc}
+                  </Text>
+
+                </View>
+
+              )
+            )
+
+          )
+
+        }
 
       </View>
+
     </ScrollView>
+
   );
+
 }
