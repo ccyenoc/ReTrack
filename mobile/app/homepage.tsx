@@ -140,7 +140,7 @@ console.log("📬 RESPONSE:", response);
           "Content-Type" : "application/json",
         },
         body: JSON.stringify({
-          accessToken: code
+          code: code
         }),
       });
 
@@ -306,17 +306,62 @@ const newItem: Action = {
               />
 
               <ScrollView>
-                {parcels.map(item => (
-                  <MiniCard key={item.id} item={item} />
-                ))}
-              </ScrollView>
+              {parcels.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/parcel",
+
+                      params: {
+                        trackingNumber: item.subtitle,
+
+                        status:
+                          item.status ??
+                          "In Transit",
+
+                        title:
+                          item.title,
+
+                        history:
+                          JSON.stringify(
+                            item.history ?? []
+                          ),
+                      },
+                    }) }
+                >
+                  <MiniCard item={item} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
             </View>
 
             {/* BILL */}
             <View style={cardStyle}>
               <Text>💳 Billing</Text>
               <Text>{bills.length} items</Text>
-              <ScrollView>{bills.map(i => <MiniCard key={i.id} item={i} />)}</ScrollView>
+              <ScrollView>
+                {bills.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/billing",
+
+                        params: {
+                          title:
+                            item.title,
+
+                          subtitle:
+                            item.subtitle,
+                        },
+                      })
+                    }
+                  >
+                    <MiniCard item={item} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
 
             {/* WORK */}
