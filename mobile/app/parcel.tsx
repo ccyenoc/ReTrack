@@ -57,15 +57,10 @@ export default function Parcel() {
 
     const fetchTracking =
         async () => {
-
             try {
-
                 const res =
-
                     await fetch(
-
                         `${process.env.EXPO_PUBLIC_API_URL}/api/track/${trackingNumber}`
-
                     );
 
                 const data =
@@ -80,17 +75,10 @@ export default function Parcel() {
                 );
 
                 const parcel =
-
                     data
                     ?.result
-                    ?.[0];
-
-                if (
-
-                    !parcel
-
-                ) {
-
+                   ?.[0];
+                if (!parcel) {
                     setStatus(
                         "Not Found"
                     );
@@ -99,82 +87,45 @@ export default function Parcel() {
 
                 }
 
-                setStatus(
-
-                    parcel
-                    .latest_status
-
-                );
+                setStatus(parcel.latest_status);
 
                 const history =
-
                     Object
                         .values(
-
                             parcel
                             .status_list
-
                         )
-
                         .filter(
-
-                            (
-                                item: any
-                            ) =>
-
+                            (item: any) =>
                                 typeof item ===
                                 "object"
-
                                 &&
-
                                 item.event_date
-
                         )
-
                         .map(
-
-                            (
-                                item: any
-                            ) => ({
-
+                            (item: any) => ({
                                 status:
                                     item.status,
 
                                 time:
-
                                     item.event_date
                                     +
-
                                     " "
-
                                     +
-
                                     item.event_time,
-
                                 desc:
                                     item.location
-
                             })
-
                         );
 
-                setTrackingHistory(
-                    history
-                );
-
+                setTrackingHistory(history);
             }
 
-            catch (
-
-                err
-
-            ) {
-
+            catch (err) {
                 console.log(
                     "TRACK ERROR:",
                     err
                 );
-
             }
 
         };
@@ -187,7 +138,6 @@ export default function Parcel() {
 
 
   return (
-
     <ScrollView
       style={{
         flex: 1,
@@ -198,9 +148,10 @@ export default function Parcel() {
 
       <View
         style={{
-          padding: 24,
+        padding:20,
+        paddingTop:60,
         }}
-      >
+        >
 
         {/* HEADER */}
 

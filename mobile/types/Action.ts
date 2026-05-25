@@ -1,10 +1,24 @@
-export type ActionType = "parcel" | "bill" | "work" | "reminder";
+export type ActionType =
+| "parcel"
+| "bill"
+| "work"
+| "alert"
+| "reminder";
 
 export type Action = {
-  id: string;
-  type: ActionType;
 
-  title: string;
-  subtitle: string;
-  status?: string;
+id:string;
+
+type:ActionType;
+
+title:string;
+
+subtitle:string;
+
+summary?:string;
+
+status?:string;
+
+history?:string[];
+
 };

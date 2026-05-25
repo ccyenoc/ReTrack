@@ -36,15 +36,6 @@ const colors = {
   subtext: "#64748B",
 };
 
-// MOCK DATA
-const mockDetectedData: Action[] = [
-  { id: "p1", type: "parcel", title: "Parcel Detected", subtitle: "JT123456789MY", status: "In Transit" },
-  { id: "p2", type: "parcel", title: "Parcel Delivered", subtitle: "JT987654321MY", status: "Delivered" },
-  { id: "b1", type: "bill", title: "Bill Due", subtitle: "Electricity payment" },
-  { id: "w1", type: "work", title: "Meeting Scheduled", subtitle: "Project discussion" },
-  { id: "a1", type: "alert", title: "Security Alert", subtitle: "New login detected" },
-];
-
 const initialReminders: Action[] = [
   { id: "1", type: "reminder", title: "Buy groceries", subtitle: "Today | 6PM" },
 ];
@@ -80,18 +71,17 @@ export default function Home() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
- const parcels =
+const parcels =
 
 detectedData
 
 .filter(
-i =>
-i.type ===
-"parcel"
+i=>
+i.type==="parcel"
 )
 
 .filter(
-i =>
+i=>
 
 !dismissedParcels
 .includes(
@@ -101,13 +91,21 @@ i.id
 )
 
 .filter(
-i =>
+i=>
 
+(
 i.subtitle
+||
+""
+)
+
 .toLowerCase()
 
 .includes(
-search.toLowerCase()
+
+search
+.toLowerCase()
+
 )
 
 );
@@ -117,43 +115,76 @@ search.toLowerCase()
   const alerts = detectedData.filter(i => i.type === "alert");
 
   const [request, response, promptAsync] =
-  AuthSession.useAuthRequest(
-    {
-      clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID!,
+    AuthSession.useAuthRequest(
+      {
+        clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID!,
 
-      scopes: [
-        "openid",
-        "profile",
-        "email",
-        "https://www.googleapis.com/auth/gmail.readonly",
-      ],
+        scopes: [
+          "openid",
+          "profile",
+          "email",
+          "https://www.googleapis.com/auth/gmail.readonly",
+        ],
 
-      redirectUri,
+        redirectUri,
 
-      responseType: AuthSession.ResponseType.Code,
-      usePKCE: true,
-    },
-    discovery
-  );
-
+        responseType: AuthSession.ResponseType.Code,
+        usePKCE: true,
+      },
+      discovery
+    );
   console.log("REDIRECT URI:", redirectUri);
 
-  useEffect(() => {
-    if (response?.type === "success") {
-     const code = response.params.code;
+   useEffect(() => {
 
-     console.log("AUTH CODE:", code);
+    if (
 
-     fetchEmails(code);
+        response?.type ===
+        "success"
+
+    ) {
+
+        const code =
+
+            response
+                .params
+                .code;
+
+        console.log(
+            "AUTH CODE:",
+            code
+        );
+
+        fetchEmails(
+
+            code,
+
+            request
+                ?.codeVerifier
+
+        );
+
     }
 
-    if (response?.type === "error") {
-      console.error("❌ OAUTH ERROR:", response.error);
-      console.error("Error Code:", response.errorCode);
-      console.error("Error Description:", response.errorDescription);
-      console.error("Full Response:", response);
+    if (
+
+        response?.type ===
+        "error"
+
+    ) {
+
+        console.log(
+            response
+        );
+
     }
-  }, [response]);
+
+}, [
+
+    response
+
+]);
+
 
 console.log("🔑 CLIENT ID:", process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID);
 console.log("🔗 REDIRECT URI:", redirectUri);
@@ -161,7 +192,7 @@ console.log("📋 REQUEST:", request);
 console.log("📬 RESPONSE:", response);
 
   {/*ngrok : */}
-  const fetchEmails = async(code: string) => {
+  const fetchEmails = async(code: string , codeVerifier?: string) => {
     try{
       const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/emails`,{
         method : "POST",
@@ -169,21 +200,72 @@ console.log("📬 RESPONSE:", response);
           "Content-Type" : "application/json",
         },
         body: JSON.stringify({
-          code: code
+          code,
+          codeVerifier
         }),
       });
 
-        const data = await res.json();
+        const data =
+await res.json();
 
-        const mapped = data.map((item: any, index: number) => ({
-            id: index.toString(),
-            type: item.type,
-            title: item.title,
-            subtitle: item.subtitle,
-        }));
+console.log(
+"BACKEND:",
+data
+);
 
-        console.log("EMAILS : ",mapped);
-       setDetectedData(mapped);
+if (
+
+!Array.isArray(
+data
+)
+
+) {
+
+console.log(
+"Backend Error:",
+data
+);
+
+return;
+
+}
+
+const mapped =
+
+data.map(
+
+(
+item: any,
+index: number
+)=>({
+
+id:
+index.toString(),
+
+type:
+item.category,
+
+title:
+item.title,
+
+subtitle:
+item.fullEmail,
+
+summary:
+item.summary,
+
+})
+
+);
+
+setDetectedData(
+mapped
+);
+
+console.log(
+"EMAILS :",
+mapped
+);
 
       }
 
@@ -514,46 +596,213 @@ id
             </View>
 
             {/* BILL */}
-            <View style={cardStyle}>
-              <Text>💳 Billing</Text>
-              <Text>{bills.length} items</Text>
-              <ScrollView>
-                {bills.map((item) => (
-                  <TouchableOpacity
-                    key={item.id}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/billing",
+           {/* BILL */}
 
-                        params: {
-                          title:
-                            item.title,
+<View
+style={cardStyle}
+>
 
-                          subtitle:
-                            item.subtitle,
-                        },
-                      })
-                    }
-                  >
-                    <MiniCard item={item} />
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+<Text>
+
+💳 Billing
+
+</Text>
+
+<Text>
+
+{bills.length}
+items
+
+</Text>
+
+<ScrollView>
+
+{
+
+bills.map(
+
+(item)=>(
+
+<TouchableOpacity
+
+key={
+item.id
+}
+
+onPress={()=>
+
+router.push({
+
+pathname:
+"/billing",
+
+params:{
+
+title:
+item.title,
+
+subtitle:
+item.subtitle,
+
+summary:
+item.summary,
+
+type:
+item.type,
+
+},
+
+})
+
+}
+
+>
+
+<MiniCard
+item={item}
+/>
+
+</TouchableOpacity>
+
+)
+
+)
+
+}
+
+</ScrollView>
+
+</View>
 
             {/* WORK */}
             <View style={cardStyle}>
               <Text>💼 Work</Text>
               <Text>{work.length} items</Text>
-              <ScrollView>{work.map(i => <MiniCard key={i.id} item={i} />)}</ScrollView>
+             <ScrollView>
+
+{work.map((item) => (
+
+<TouchableOpacity
+key={item.id}
+
+onPress={() =>
+
+router.push({
+
+pathname:
+"/work",
+
+params: {
+
+title:
+item.title,
+
+subtitle:
+item.subtitle,
+
+summary:
+item.summary,
+
+type:
+item.type,
+
+},
+
+})
+
+}
+
+>
+
+<MiniCard
+item={item}
+/>
+
+</TouchableOpacity>
+
+))}
+
+</ScrollView>
             </View>
 
             {/* ALERT */}
-            <View style={cardStyle}>
-              <Text>🔔 Alerts</Text>
-              <Text>{alerts.length} items</Text>
-              <ScrollView>{alerts.map(i => <MiniCard key={i.id} item={i} />)}</ScrollView>
-            </View>
+            {/* ALERT */}
+
+<View
+style={cardStyle}
+>
+
+<Text>
+
+🔔 Alerts
+
+</Text>
+
+<Text>
+
+{alerts.length}
+items
+
+</Text>
+
+<ScrollView>
+
+{
+
+alerts.map(
+
+(item)=>(
+
+<TouchableOpacity
+
+key={
+item.id
+}
+
+onPress={()=>
+
+router.push({
+
+pathname:
+"/alert",
+
+params:{
+
+title:
+item.title,
+
+subtitle:
+item.subtitle,
+
+summary:
+item.summary,
+
+type:
+item.type,
+
+},
+
+})
+
+}
+
+>
+
+<MiniCard
+item={item}
+/>
+
+</TouchableOpacity>
+
+)
+
+)
+
+}
+
+</ScrollView>
+
+</View>
 
           </View>
         </View>

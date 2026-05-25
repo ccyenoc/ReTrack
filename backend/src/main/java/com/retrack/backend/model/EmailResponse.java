@@ -2,17 +2,62 @@ package com.retrack.backend.model;
 
 public class EmailResponse {
 
-    private String type;
-    private String title;
-    private String subtitle;
+    private String category;
 
-    public EmailResponse(String type, String title, String subtitle) {
-        this.type = type;
-        this.title = title;
-        this.subtitle = subtitle;
+    private String title;
+
+    private String summary;
+
+    private String fullEmail;
+
+    public EmailResponse(
+
+        String category,
+
+        String title,
+
+        String summary,
+
+        String fullEmail
+
+    ) {
+
+        this.category =
+            category;
+
+        this.title =
+            title;
+
+        this.summary =
+            summary;
+
+        this.fullEmail =
+            fullEmail;
+
     }
 
-    public String getType() { return type; }
-    public String getTitle() { return title; }
-    public String getSubtitle() { return subtitle; }
+    public String getCategory() {
+
+        return category;
+
+    }
+
+    public String getTitle() {
+
+        return title;
+
+    }
+
+    public String getSummary() {
+
+        return summary;
+
+    }
+
+    public String getFullEmail() {
+
+        return fullEmail;
+
+    }
+
 }
